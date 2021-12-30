@@ -1,0 +1,34 @@
+package models
+
+type AlcoholResponseImages struct {
+	ImageUrl string
+}
+
+type AlcoholResponse struct {
+	Metadata struct {
+		NextPage int
+	}
+	Products []struct {
+		ProductId         string
+		ProductNumber     string
+		ProductNameBold   string
+		ProductNameThin   string
+		AlcoholPercentage float64
+		Price             float64
+		Volume            float64
+		Country           string
+		Images            []AlcoholResponseImages
+	}
+}
+
+type Alcohol struct {
+	ID              int     `gorm:"primaryKey;not null;autoIncrement:true"`
+	Name            string  `json:"name"`
+	SystembolagetId string  `json:"id" gorm:"primaryKey"`
+	Number          string  `json:"number" gorm:"primaryKey"`
+	Price           float64 `json:"price"`
+	Volume          float64 `json:"volume"`
+	Country         string  `json:"country"`
+	Image           string  `json:"image"`
+	Apk             float64 `json:"apk"`
+}
