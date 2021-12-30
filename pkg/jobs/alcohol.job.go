@@ -50,7 +50,7 @@ func fetchAlcohols() []models.Alcohol {
 	client := &http.Client{}
 	subscriptionKey := utils.GetEnvVariable("SYSTEMBOLAGET_SUBSCRIPTION_KEY", "")
 
-	for page < 10 {
+	for {
 		url := "https://api-extern.systembolaget.se/sb-api-ecommerce/v1/productsearch/search?size=30&page=" + fmt.Sprint(page)
 		req, _ := http.NewRequest("GET", url, nil)
 
