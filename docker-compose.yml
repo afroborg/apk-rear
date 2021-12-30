@@ -16,7 +16,7 @@ services:
     env_file:
       - .env
     ports:
-      - '8080:8080'
+      - '${PORT}:${PORT}'
     labels:
       - traefik.http.routers.apk-backend.rule=${ROUTER_RULE}
       - traefik.http.routers.apk-backend.tls=true
@@ -25,8 +25,8 @@ services:
       - traefik
       - apk
     environment:
-      PORT: 8080
-      POSTGRES_HOST: host.docker.internal
+      PORT: ${PORT}
+      POSTGRES_HOST: db
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
@@ -47,6 +47,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - db-vol:/var/postgresql/data
