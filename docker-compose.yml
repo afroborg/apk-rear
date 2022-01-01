@@ -8,32 +8,6 @@ networks:
     name: apk-network
 
 services:
-  apk-backend:
-    container_name: apk-backend
-    build:
-      context: .
-      dockerfile: Dockerfile
-    env_file:
-      - .env
-    ports:
-      - '${PORT}:${PORT}'
-    labels:
-      - traefik.http.routers.apk-backend.rule=${ROUTER_RULE}
-      - traefik.http.routers.apk-backend.tls=true
-      - traefik.http.routers.apk-backend.tls.certresolver=le
-    networks:
-      - traefik
-      - apk
-    environment:
-      PORT: ${PORT}
-      POSTGRES_HOST: db
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-      SYSTEMBOLAGET_SUBSCRIPTION_KEY: ${SYSTEMBOLAGET_SUBSCRIPTION_KEY}
-    depends_on:
-      - db
-
   db:
     container_name: apk-postgres
     image: postgres
@@ -51,6 +25,33 @@ services:
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - db-vol:/var/postgresql/data
+
+  apk-backend:
+    container_name: apk-backend
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - '${PORT}:${PORT}'
+    labels:
+      - traefik.http.routers.apk-backend.rule=${ROUTER_RULE}
+      - traefik.http.routers.apk-backend.tls=true
+      - traefik.http.routers.apk-backend.tls.certresolver=le
+      - traefik.http.services.apk-backend.loadbalancer.server.port=${PORT}
+    networks:
+      - traefik
+      - apk
+    environment:
+      PORT: ${PORT}
+      POSTGRES_HOST: db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      SYSTEMBOLAGET_SUBSCRIPTION_KEY: ${SYSTEMBOLAGET_SUBSCRIPTION_KEY}
+    depends_on:
+      - db
 
 volumes:
   db-vol:

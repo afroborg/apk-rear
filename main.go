@@ -27,6 +27,8 @@ func setupRouter(DB *gorm.DB) error {
 
 	port := utils.GetEnvVariable("PORT", "8080")
 
+	log.Println("Starting server on port "+port)
+
 	err := http.ListenAndServe(":"+port, r)
 
 	return err
