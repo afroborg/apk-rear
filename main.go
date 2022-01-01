@@ -22,8 +22,8 @@ func setupRouter(DB *gorm.DB) error {
 	// Set up middleware logger
 	r.Use(middlewares.Logger)
 
-	r.Path("/alcohols").Methods("GET").Queries("page", "{page:[0-9]+}", "per_page", "{per_page:[0-9]+}").HandlerFunc(h.GetAlcohols)
-	r.HandleFunc("/health", h.Health).Methods("GET", "POST", "PUT")
+	r.Path("/api/alcohols").Methods("GET").Queries("page", "{page:[0-9]+}", "per_page", "{per_page:[0-9]+}").HandlerFunc(h.GetAlcohols)
+	r.HandleFunc("/api/health", h.Health).Methods("GET", "POST", "PUT")
 
 	port := utils.GetEnvVariable("PORT", "8080")
 
