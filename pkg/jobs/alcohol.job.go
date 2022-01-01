@@ -101,6 +101,7 @@ func mapAlcohols(response models.AlcoholResponse) []models.Alcohol {
 			Image:           getImage(product.Images),
 			Apk:             calcApk(product.AlcoholPercentage, product.Volume, product.Price),
 			Category:        product.CategoryLevel1,
+			Link: 			 "https://systembolaget.se/" + product.ProductNumber,
 		}
 
 		list = append(list, alcohol)

@@ -25,12 +25,13 @@ type AlcoholResponse struct {
 type Alcohol struct {
 	ID              int     `gorm:"primaryKey;not null;autoIncrement:true"`
 	Name            string  `json:"name"`
-	SystembolagetId string  `json:"id" gorm:"primaryKey"`
-	Number          string  `json:"number" gorm:"primaryKey"`
+	SystembolagetId string  `json:"systembolagetId" gorm:"primaryKey"`
+	Number          string  `json:"systembolagetNumber" gorm:"primaryKey"`
 	Price           float64 `json:"price"`
 	Volume          float64 `json:"volume"`
 	Country         string  `json:"country"`
 	Image           string  `json:"image"`
 	Apk             float64 `json:"apk"`
 	Category        string  `json:"category"`
+	Link 			string  `json:"link"`
 }
