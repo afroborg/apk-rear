@@ -40,7 +40,7 @@ func run(DB *gorm.DB) {
 		DB.Exec("DELETE FROM alcohols")
 	}
 
-	DB.Create(&alcohols)
+	DB.CreateInBatches(&alcohols, 500)
 }
 
 func fetchAlcohols() []models.Alcohol {
@@ -70,6 +70,12 @@ func fetchAlcohols() []models.Alcohol {
 
 		data := models.AlcoholResponse{}
 		json.NewDecoder(res.Body).Decode(&data)
+
+		if len(data.Products) == 0 {
+			log.Printf("Found 0 alochols on page %d", page)
+			break
+		}
+
 		log.Printf("Fetched %d alcohols from page %d, next page: %d", len(data.Products), page, data.Metadata.NextPage)
 
 		alcohols = append(alcohols, mapAlcohols(data)...)
@@ -94,6 +100,7 @@ func mapAlcohols(response models.AlcoholResponse) []models.Alcohol {
 			Country:         product.Country,
 			Image:           getImage(product.Images),
 			Apk:             calcApk(product.AlcoholPercentage, product.Volume, product.Price),
+			Category:        product.CategoryLevel1,
 		}
 
 		list = append(list, alcohol)

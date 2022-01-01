@@ -17,6 +17,7 @@ type AlcoholResponse struct {
 		Price             float64
 		Volume            float64
 		Country           string
+		CategoryLevel1    string
 		Images            []AlcoholResponseImages
 	}
 }
@@ -31,4 +32,5 @@ type Alcohol struct {
 	Country         string  `json:"country"`
 	Image           string  `json:"image"`
 	Apk             float64 `json:"apk"`
+	Category        string  `json:"category"`
 }
