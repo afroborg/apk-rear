@@ -26,7 +26,15 @@ func (h handler) GetAlcohols(w http.ResponseWriter, r *http.Request) {
 		perPage = 100
 	}
 
-	h.DB.Model(alcohols).Count(&total).Offset(perPage * (page - 1)).Limit(perPage).Order("apk desc").Find(&alcohols)
+	category := q.Get("category")
+
+	query := h.DB.Model(alcohols).Count(&total).Offset(perPage * (page - 1)).Limit(perPage).Order("apk desc")
+
+	if category != "" {
+		query.Where("Category = ?", category).Find(&alcohols)
+	} else {
+		query.Find(&alcohols)
+	}
 
 	h.respond(w, map[string]interface{}{
 		"meta": generateMeta(total, page, perPage, len(alcohols)),
