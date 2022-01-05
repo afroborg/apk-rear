@@ -93,6 +93,7 @@ func mapAlcohols(response models.AlcoholResponse) []models.Alcohol {
 	for _, product := range response.Products {
 		alcohol := models.Alcohol{
 			Name:            product.ProductNameBold,
+			ThinName:        product.ProductNameThin,
 			SystembolagetId: product.ProductId,
 			Number:          product.ProductNumber,
 			Price:           product.Price,
