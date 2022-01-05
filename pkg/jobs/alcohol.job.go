@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/afroborg/apk-rear/pkg/models"
 	"github.com/afroborg/apk-rear/pkg/utils"
@@ -41,6 +42,11 @@ func run(DB *gorm.DB) {
 	}
 
 	DB.CreateInBatches(&alcohols, 500)
+
+	DB.Create(&models.Status{
+		Time:           time.Now(),
+		SyncedProducts: len(alcohols),
+	})
 }
 
 func fetchAlcohols() []models.Alcohol {

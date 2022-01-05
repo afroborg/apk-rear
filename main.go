@@ -24,10 +24,11 @@ func setupRouter(DB *gorm.DB) error {
 
 	r.Path("/api/alcohols").Methods("GET").Queries("page", "{page:[0-9]+}", "per_page", "{per_page:[0-9]+}").HandlerFunc(h.GetAlcohols)
 	r.HandleFunc("/api/health", h.Health).Methods("GET", "POST", "PUT")
+	r.HandleFunc("/api/status", h.Status).Methods("GET")
 
 	port := utils.GetEnvVariable("PORT", "8080")
 
-	log.Println("Starting server on port "+port)
+	log.Println("Starting server on port " + port)
 
 	err := http.ListenAndServe(":"+port, r)
 
