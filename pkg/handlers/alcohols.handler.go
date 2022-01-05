@@ -3,48 +3,58 @@ package handlers
 import (
 	"math"
 	"net/http"
-	"strconv"
 
 	"github.com/afroborg/apk-rear/pkg/models"
+	"github.com/afroborg/apk-rear/pkg/utils"
 )
 
 func (h handler) GetAlcohols(w http.ResponseWriter, r *http.Request) {
 	var alcohols []models.Alcohol
-	var total int64
+	var totalAlcohols int64
+	var filteredTotal int64
 
 	q := r.URL.Query()
 
-	page, err := strconv.Atoi(q.Get("page"))
+	// Get query variables
+	page := utils.GetQueryVariable(&q, "page", 1).(int)
+	perPage := utils.GetQueryVariable(&q, "per_page", 100).(int)
+	category := utils.GetQueryVariable(&q, "category", "").(string)
+	search := utils.GetQueryVariable(&q, "search", "").(string)
 
-	if err != nil {
-		page = 1
-	}
+	// Create basic query
+	query := h.DB.Model(alcohols).Count(&totalAlcohols).Offset(perPage * (page - 1)).Limit(perPage).Order("apk desc")
 
-	perPage, err := strconv.Atoi(q.Get("per_page"))
-
-	if err != nil {
-		perPage = 100
-	}
-
-	category := q.Get("category")
-
-	query := h.DB.Model(alcohols).Count(&total).Offset(perPage * (page - 1)).Limit(perPage).Order("apk desc")
+	whereStr := ""
+	searchArr := make([]interface{}, 0)
 
 	if category != "" {
-		query.Where("Category = ?", category).Find(&alcohols)
-	} else {
-		query.Find(&alcohols)
+		whereStr += "Category = ?"
+		searchArr = append(searchArr, category)
 	}
 
+	if search != "" {
+		if whereStr != "" {
+			whereStr += " AND "
+		}
+		whereStr += "Name ILIKE ?"
+		searchArr = append(searchArr, "%"+search+"%")
+	}
+
+	if whereStr != "" {
+		query = query.Where(whereStr, searchArr...)
+	}
+
+	query.Count(&filteredTotal).Find(&alcohols)
+
 	h.respond(w, map[string]interface{}{
-		"meta": generateMeta(total, page, perPage, len(alcohols)),
+		"meta": generateMeta(totalAlcohols, filteredTotal, page, perPage, len(alcohols)),
 		"data": alcohols,
 	}, http.StatusOK)
 }
 
-func generateMeta(total int64, page int, perPage int, thisPage int) map[string]interface{} {
+func generateMeta(totalAlcohols int64, filteredTotal int64, page int, perPage int, thisPage int) map[string]interface{} {
 
-	totalPages := int(math.Ceil(float64(total) / float64(perPage)))
+	totalPages := int(math.Ceil(float64(filteredTotal) / float64(perPage)))
 
 	nextPage := page + 1
 
@@ -53,11 +63,12 @@ func generateMeta(total int64, page int, perPage int, thisPage int) map[string]i
 	}
 
 	return map[string]interface{}{
-		"total":      total,
-		"totalPages": totalPages,
-		"page":       page,
-		"nextPage":   nextPage,
-		"perPage":    perPage,
-		"onThisPage": thisPage,
+		"total":         totalAlcohols,
+		"filteredTotal": filteredTotal,
+		"totalPages":    totalPages,
+		"page":          page,
+		"nextPage":      nextPage,
+		"perPage":       perPage,
+		"onThisPage":    thisPage,
 	}
 }
