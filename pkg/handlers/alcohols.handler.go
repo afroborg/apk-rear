@@ -11,7 +11,6 @@ import (
 func (h handler) GetAlcohols(w http.ResponseWriter, r *http.Request) {
 	var alcohols []models.Alcohol
 	var totalAlcohols int64
-	var filteredTotal int64
 
 	q := r.URL.Query()
 
@@ -44,17 +43,17 @@ func (h handler) GetAlcohols(w http.ResponseWriter, r *http.Request) {
 		query = query.Where(whereStr, searchArr...)
 	}
 
-	query.Count(&filteredTotal).Find(&alcohols)
+	query.Find(&alcohols)
 
 	h.respond(w, map[string]interface{}{
-		"meta": generateMeta(totalAlcohols, filteredTotal, page, perPage, len(alcohols)),
+		"meta": generateMeta(totalAlcohols, page, perPage, len(alcohols)),
 		"data": alcohols,
 	}, http.StatusOK)
 }
 
-func generateMeta(totalAlcohols int64, filteredTotal int64, page int, perPage int, thisPage int) map[string]interface{} {
+func generateMeta(total int64, page int, perPage int, thisPage int) map[string]interface{} {
 
-	totalPages := int(math.Ceil(float64(filteredTotal) / float64(perPage)))
+	totalPages := int(math.Ceil(float64(total) / float64(perPage)))
 
 	nextPage := page + 1
 
@@ -63,12 +62,11 @@ func generateMeta(totalAlcohols int64, filteredTotal int64, page int, perPage in
 	}
 
 	return map[string]interface{}{
-		"total":         totalAlcohols,
-		"filteredTotal": filteredTotal,
-		"totalPages":    totalPages,
-		"page":          page,
-		"nextPage":      nextPage,
-		"perPage":       perPage,
-		"onThisPage":    thisPage,
+		"total":      total,
+		"totalPages": totalPages,
+		"page":       page,
+		"nextPage":   nextPage,
+		"perPage":    perPage,
+		"onThisPage": thisPage,
 	}
 }
