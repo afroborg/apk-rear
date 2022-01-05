@@ -10,7 +10,8 @@ import (
 
 func (h handler) GetAlcohols(w http.ResponseWriter, r *http.Request) {
 	var alcohols []models.Alcohol
-	var totalAlcohols int64
+	var totalCount int64
+	var fiterCount int64
 
 	q := r.URL.Query()
 
@@ -21,13 +22,13 @@ func (h handler) GetAlcohols(w http.ResponseWriter, r *http.Request) {
 	search := utils.GetQueryVariable(&q, "search", "").(string)
 
 	// Create basic query
-	query := h.DB.Model(alcohols).Count(&totalAlcohols).Offset(perPage * (page - 1)).Limit(perPage).Order("apk desc")
+	query := h.DB.Model(alcohols).Count(&totalCount).Offset(perPage * (page - 1)).Limit(perPage).Order("apk desc")
 
 	whereStr := ""
 	searchArr := make([]interface{}, 0)
 
 	if category != "" {
-		whereStr += "Category = ?"
+		whereStr += "category = ?"
 		searchArr = append(searchArr, category)
 	}
 
@@ -35,7 +36,9 @@ func (h handler) GetAlcohols(w http.ResponseWriter, r *http.Request) {
 		if whereStr != "" {
 			whereStr += " AND "
 		}
-		whereStr += "Name ILIKE ?"
+
+		whereStr += "name ILIKE ? OR thin_name ILIKE ?"
+		searchArr = append(searchArr, "%"+search+"%")
 		searchArr = append(searchArr, "%"+search+"%")
 	}
 
@@ -43,17 +46,17 @@ func (h handler) GetAlcohols(w http.ResponseWriter, r *http.Request) {
 		query = query.Where(whereStr, searchArr...)
 	}
 
-	query.Find(&alcohols)
+	query.Count(&fiterCount).Find(&alcohols)
 
 	h.respond(w, map[string]interface{}{
-		"meta": generateMeta(totalAlcohols, page, perPage, len(alcohols)),
+		"meta": generateMeta(totalCount, fiterCount, page, perPage, len(alcohols)),
 		"data": alcohols,
 	}, http.StatusOK)
 }
 
-func generateMeta(total int64, page int, perPage int, thisPage int) map[string]interface{} {
+func generateMeta(totalCount int64, filterCount int64, page int, perPage int, thisPage int) map[string]interface{} {
 
-	totalPages := int(math.Ceil(float64(total) / float64(perPage)))
+	totalPages := int(math.Ceil(float64(filterCount) / float64(perPage)))
 
 	nextPage := page + 1
 
@@ -62,11 +65,12 @@ func generateMeta(total int64, page int, perPage int, thisPage int) map[string]i
 	}
 
 	return map[string]interface{}{
-		"total":      total,
-		"totalPages": totalPages,
-		"page":       page,
-		"nextPage":   nextPage,
-		"perPage":    perPage,
-		"onThisPage": thisPage,
+		"total":       totalCount,
+		"filterCount": filterCount,
+		"totalPages":  totalPages,
+		"page":        page,
+		"nextPage":    nextPage,
+		"perPage":     perPage,
+		"onThisPage":  thisPage,
 	}
 }
