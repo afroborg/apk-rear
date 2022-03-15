@@ -24,6 +24,7 @@ func Init() *gorm.DB {
 	}
 
 	db.AutoMigrate(&models.Alcohol{})
+	db.AutoMigrate(&models.Status{})
 
 	return db
 }
