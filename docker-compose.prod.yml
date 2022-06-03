@@ -1,28 +1,15 @@
 version: '3.1'
 
 networks:
+  traefik:
+    external: true
+    name: traefik
+  postgres:
+    external: true
   apk:
     name: apk-network
 
 services:
-  db:
-    container_name: apk-postgres
-    image: postgres
-    ports:
-      - 5432:5432
-    env_file:
-      - .env
-    restart: always
-    networks:
-      - apk
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-      PGDATA: /var/lib/postgresql/data/pgdata
-    volumes:
-      - db-vol:/var/postgresql/data
-
   apk-backend:
     container_name: apk-backend
     build:
@@ -32,8 +19,15 @@ services:
       - .env
     ports:
       - '${PORT}:${PORT}'
+    labels:
+      - traefik.http.routers.apk-backend.rule=${ROUTER_RULE}
+      - traefik.http.routers.apk-backend.tls=true
+      - traefik.http.routers.apk-backend.tls.certresolver=le
+      - traefik.http.services.apk-backend.loadbalancer.server.port=${PORT}
     networks:
+      - traefik
       - apk
+      - postgres
     environment:
       PORT: ${PORT}
       POSTGRES_HOST: db
@@ -43,6 +37,3 @@ services:
       SYSTEMBOLAGET_SUBSCRIPTION_KEY: ${SYSTEMBOLAGET_SUBSCRIPTION_KEY}
     depends_on:
       - db
-
-volumes:
-  db-vol:

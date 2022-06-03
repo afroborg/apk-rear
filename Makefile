@@ -1,2 +1,2 @@
 start:
-	docker-compose up -d --no-deps --build
+	docker-compose -f docker-compose.prod.yml up -d --no-deps --build
