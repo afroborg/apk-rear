@@ -27,7 +27,7 @@ services:
     networks:
       - traefik
       - apk
-      - postgres
+      - pg-net
     environment:
       PORT: ${PORT}
       POSTGRES_HOST: db
