@@ -82,6 +82,11 @@ func fetchAlcohols() []models.Alcohol {
 			break
 		}
 
+		if data.Metadata.NextPage == page {
+			log.Printf("Reached end of pages at page %d", page)
+			break
+		}
+
 		log.Printf("Fetched %d alcohols from page %d, next page: %d", len(data.Products), page, data.Metadata.NextPage)
 
 		alcohols = append(alcohols, mapAlcohols(data)...)
