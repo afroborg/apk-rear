@@ -15,6 +15,7 @@ import (
 
 func SyncAlcohol(DB *gorm.DB, c *cron.Cron) {
 	log.Println("Initializing alcohol job")
+	DB.Exec("DELETE FROM alcohols")
 
 	var count int64
 
@@ -22,18 +23,20 @@ func SyncAlcohol(DB *gorm.DB, c *cron.Cron) {
 
 	if count == 0 {
 		log.Print("No alcohols found, running job prematurely")
-		go run(DB)
+		go getAlcohols(DB)
 	}
 
 	// Run every sunday at 03:00
 	c.AddFunc("0 0 3 * * 0", func() {
-		go run(DB)
+		go getAlcohols(DB)
 	})
 }
 
-func run(DB *gorm.DB) {
+func getAlcohols(DB *gorm.DB) {
+	var stores []models.Store
+	DB.Model(stores).Find(&stores)
 
-	alcohols := fetchAlcohols()
+	alcohols := unique(fetchAlcohols(stores))
 
 	log.Printf("\nFetched %d alcohols\n-----------------", len(alcohols))
 
@@ -49,49 +52,51 @@ func run(DB *gorm.DB) {
 	})
 }
 
-func fetchAlcohols() []models.Alcohol {
+func fetchAlcohols(stores []models.Store) []models.Alcohol {
 	alcohols := []models.Alcohol{}
-	page := 1
 
 	client := &http.Client{}
-	subscriptionKey := utils.GetEnvVariable("SYSTEMBOLAGET_SUBSCRIPTION_KEY", "")
+	subscriptionKey := utils.GetEnvVariable("SYSTEMBOLAGET_SEARCH_KEY", "")
 
-	for {
-		url := "https://api-extern.systembolaget.se/sb-api-ecommerce/v1/productsearch/search?size=30&page=" + fmt.Sprint(page)
-		req, _ := http.NewRequest("GET", url, nil)
+	for _, store := range stores {
+		log.Printf("Fetching alcohols from %s", store.Name)
+		page := 1
 
-		req.Header = http.Header{
-			"Accept":                    []string{"application/json"},
-			"Ocp-Apim-Subscription-Key": []string{subscriptionKey},
+		for {
+			url := "https://api-extern.systembolaget.se/sb-api-ecommerce/v1/productsearch/search?size=30&isInStoreAssortmentSearch=true&page=" + fmt.Sprint(page) + "&storeId=" + store.SystembolagetId
+			req, _ := http.NewRequest("GET", url, nil)
+
+			req.Header = http.Header{
+				"Accept":                    []string{"application/json"},
+				"Ocp-Apim-Subscription-Key": []string{subscriptionKey},
+			}
+
+			res, err := client.Do(req)
+
+			if err != nil {
+				log.Println(err)
+				break
+			}
+
+			defer res.Body.Close()
+
+			data := models.AlcoholResponse{}
+			json.NewDecoder(res.Body).Decode(&data)
+
+			if len(data.Products) == 0 {
+				log.Printf("Found 0 alochols on page %d in store %s", page, store.Name)
+				break
+			}
+
+			if data.Metadata.NextPage == page || data.Metadata.NextPage == -1 {
+				log.Printf("Reached end of pages at page %d in store %s", page, store.Name)
+				break
+			}
+
+			alcohols = append(alcohols, mapAlcohols(data)...)
+
+			page = data.Metadata.NextPage
 		}
-
-		res, err := client.Do(req)
-
-		if err != nil {
-			log.Println(err)
-			break
-		}
-
-		defer res.Body.Close()
-
-		data := models.AlcoholResponse{}
-		json.NewDecoder(res.Body).Decode(&data)
-
-		if len(data.Products) == 0 {
-			log.Printf("Found 0 alochols on page %d", page)
-			break
-		}
-
-		if data.Metadata.NextPage == page {
-			log.Printf("Reached end of pages at page %d", page)
-			break
-		}
-
-		log.Printf("Fetched %d alcohols from page %d, next page: %d", len(data.Products), page, data.Metadata.NextPage)
-
-		alcohols = append(alcohols, mapAlcohols(data)...)
-
-		page = data.Metadata.NextPage
 	}
 
 	return alcohols
@@ -132,4 +137,18 @@ func getImage(images []models.AlcoholResponseImages) string {
 
 func calcApk(percentage float64, volume float64, price float64) float64 {
 	return (percentage / 100) * volume / price
+}
+
+func unique(s []models.Alcohol) []models.Alcohol {
+	inResult := make(map[string]bool)
+	var result []models.Alcohol
+
+	for _, alcohol := range s {
+		if _, ok := inResult[alcohol.SystembolagetId]; !ok {
+			inResult[alcohol.SystembolagetId] = true
+			result = append(result, alcohol)
+		}
+	}
+
+	return result
 }
