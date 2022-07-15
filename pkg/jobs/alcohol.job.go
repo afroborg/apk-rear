@@ -15,7 +15,6 @@ import (
 
 func SyncAlcohol(DB *gorm.DB, c *cron.Cron) {
 	log.Println("Initializing alcohol job")
-	DB.Exec("DELETE FROM alcohols")
 
 	var count int64
 
