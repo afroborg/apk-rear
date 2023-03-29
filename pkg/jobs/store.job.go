@@ -23,8 +23,8 @@ func SyncStores(DB *gorm.DB, c *cron.Cron) {
 		getStores(DB)
 	}
 
-	// Run every sunday at 01:00
-	c.AddFunc("0 0 1 * * 0", func() {
+	// Run every first day of the month
+	c.AddFunc("0 0 1 1 * *", func() {
 		go getStores(DB)
 	})
 }
